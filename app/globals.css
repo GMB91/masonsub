@@ -120,3 +120,16 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Tailwind layers */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Optional third-party animate css (install if used)
+@import "tw-animate-css";
+*/
+
+/* App-wide styles */
+html, body, #__next { height: 100%; }
+body { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }

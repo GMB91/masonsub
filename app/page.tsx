@@ -1,6 +1,6 @@
-import { redirect } from 'next/navigation'
+import { redirect } from "next/navigation"
 
-export default function Home() {
-  // Redirect root to the sample tenant dashboard
-  redirect('/demo/dashboard')
+export default function Page() {
+  // Redirect root to the example org page created earlier
+  redirect("/org/demo")
 }
