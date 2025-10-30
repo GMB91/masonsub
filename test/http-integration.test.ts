@@ -48,7 +48,12 @@ describe('HTTP integration (smoke)', () => {
 
       // run the smoke script
       await new Promise((resolve, reject) => {
-        const s = spawn('node', [path.join('scripts', 'smoke-claimants.js')], { cwd, shell: true, stdio: 'inherit' })
+        const s = spawn('node', [path.join('scripts', 'smoke-claimants.js')], {
+          cwd,
+          shell: true,
+          stdio: 'inherit',
+          env: { ...process.env, BASE_URL: 'http://localhost:3000' },
+        })
         s.on('exit', (code) => (code === 0 ? resolve(null) : reject(new Error('smoke script failed'))))
       })
     } finally {
