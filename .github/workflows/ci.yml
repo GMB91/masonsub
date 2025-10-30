@@ -33,6 +33,12 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: next-build
+          path: .next
+
       - name: Start production server (background)
         run: |
           npm run start &
@@ -65,3 +71,8 @@ jobs:
 
       - name: Run HTTP integration test
         run: npx vitest run test/http-integration.test.ts --reporter dot
+      - name: Download build artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: next-build
+          path: .next
