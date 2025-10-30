@@ -11,7 +11,10 @@ export type Claimant = {
   [key: string]: unknown
 }
 
-const DATA_DIR = path.resolve(process.cwd(), "data")
+// allow overriding data dir for tests via CLAIMANT_DATA_DIR env var
+const DATA_DIR = process.env.CLAIMANT_DATA_DIR
+  ? path.resolve(process.env.CLAIMANT_DATA_DIR)
+  : path.resolve(process.cwd(), "data")
 const FILE = path.join(DATA_DIR, "claimants.json")
 
 async function ensureFile() {

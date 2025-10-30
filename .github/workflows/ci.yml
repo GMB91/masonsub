@@ -24,6 +24,9 @@ jobs:
       - name: Typecheck
         run: npx tsc --noEmit
 
+      - name: Unit tests
+        run: npx vitest run --reporter dot
+
       - name: Lint
         run: npx eslint "app/**/*.{ts,tsx}" "src/**/*.{ts,tsx}" || true
 
