@@ -11,7 +11,6 @@ export default defineConfig({
   test: {
     environment: 'node',
     globals: true,
-    // disable worker threads so tests that share filesystem state run sequentially
-    threads: false,
+  // tests run with default worker settings; tests isolate filesystem via CLAIMANT_DATA_DIR
   },
 })
