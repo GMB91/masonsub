@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "check:health": "node scripts/check-health.js"
+    "check:health": "node scripts/check-health.js",
+    "check:claimants": "node ./scripts/smoke-claimants.js"
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.2.3",

@@ -38,3 +38,8 @@ jobs:
 
       - name: Health check
         run: node scripts/check-health.js
+
+      - name: Claimants smoke test
+        run: |
+          # run the claimants smoke test against the started production server
+          node scripts/smoke-claimants.js
