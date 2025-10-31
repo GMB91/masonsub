@@ -1,7 +1,7 @@
 /** @vitest-environment jsdom */
 
 // mock modal to simplify UI tests (avoid flaky focus/portal issues)
-vi.mock('@/components/ui/modal', async (importOriginal) => {
+vi.mock('@/components/ui/modal', async (importOriginal: any) => {
   const React = await import('react')
   return {
     default: ({ open, title, onClose, children }: any) =>
@@ -58,7 +58,7 @@ describe('ClaimantList UI', () => {
 
   afterEach(() => {
     // restore the stubbed fetch
-    // @ts-expect-error - test runtime global
+    // restore test globals
     vi.unstubAllGlobals()
   })
 
@@ -79,7 +79,7 @@ describe('ClaimantList UI', () => {
   const title = await screen.findByText('Alice')
   const card = title.closest('[data-slot="card"]')
   if (!card) throw new Error('card not found')
-  const editBtn = within(card).getByRole('button', { name: /edit/i })
+  const editBtn = within(card as HTMLElement).getByRole('button', { name: /edit/i })
   await user.click(editBtn)
 
     // modal should show and input should have current name
