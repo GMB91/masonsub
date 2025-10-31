@@ -2,7 +2,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import type { Claimant } from '@/types/claimant'
 import toast from 'react-hot-toast'
-import { optimisticAdd, optimisticUpdate, optimisticRemove } from './optimistic'
+import { optimisticAdd, optimisticUpdate, optimisticRemove } from '@/lib/hooks/optimistic'
 
 export function useClaimants() {
   return useQuery<Claimant[], Error>({
