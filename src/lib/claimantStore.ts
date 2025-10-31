@@ -15,6 +15,7 @@
 import { promises as fs } from 'fs'
 import path from 'path'
 import { supabaseServer } from './supabaseClient'
+import { updateClaimantWithWorkflows } from './workflows'
 
 type AnyClaimant = Record<string, any> & { id: string; external_id?: string }
 
@@ -50,7 +51,22 @@ async function writeAllFile(items: AnyClaimant[]) {
   // write atomically: write to temp file then rename
   const tmp = `${FILE}.tmp`
   await fs.writeFile(tmp, JSON.stringify(items, null, 2), 'utf-8')
-  await fs.rename(tmp, FILE)
+  try {
+    await fs.rename(tmp, FILE)
+  } catch (e) {
+    // On some Windows setups, fs.rename can fail with EPERM if the target
+    // file is open or locked. Fall back to copy+unlink as a more robust
+    // atomic-ish replacement, and finally retry rename as a last resort.
+    try {
+      await fs.copyFile(tmp, FILE)
+      await fs.unlink(tmp)
+    } catch {
+      // If copy/unlink fails, rethrow the original error by attempting
+      // the rename once more (allowing the outer caller to see the real
+      // failure if it persists).
+      await fs.rename(tmp, FILE)
+    }
+  }
 }
 
 export async function upsertClaimant(payload: Record<string, any>) {
@@ -145,7 +161,20 @@ export async function createClaimant(payload: Record<string, any>) {
 
     const { data, error } = await supabaseServer.from('claimants').insert(record).select().limit(1).maybeSingle()
     if (error) throw error
-    return (data as AnyClaimant) || null
+
+    let created = (data as AnyClaimant) || null
+    try {
+      created = await updateClaimantWithWorkflows(null, created)
+      // persist any workflow-attached data (dev/stub enrichments)
+      if (created?.enriched_data) {
+        await supabaseServer.from('claimants').update({ enriched_data: created.enriched_data }).eq('id', created.id)
+      }
+    } catch (e) {
+      // swallow workflow errors; workflows should not break create
+      // eslint-disable-next-line no-console
+      console.warn('[claimantStore] workflows failed:', (e as any)?.message || e)
+    }
+    return created
   }
   const all = await readAllFile()
   const inputId = payload.id as string | undefined
@@ -158,27 +187,77 @@ export async function createClaimant(payload: Record<string, any>) {
   if (externalId) claimant.external_id = externalId
   all.push(claimant)
   await writeAllFile(all)
+
+  // run workflows in dev: if they add enriched_data, persist it
+  try {
+    const after = await updateClaimantWithWorkflows(null, claimant)
+    if (after?.enriched_data) {
+      const idx = all.findIndex((c) => c.id === after.id || c.external_id === after.external_id)
+      if (idx !== -1) {
+        all[idx] = after
+        await writeAllFile(all)
+      }
+      return after
+    }
+  } catch (e) {
+    // eslint-disable-next-line no-console
+    console.warn('[claimantStore] workflows failed (file):', (e as any)?.message || e)
+  }
+
   return claimant
 }
 
 export async function updateClaimant(id: string, patch: Partial<AnyClaimant>) {
   if (supabaseServer) {
+    // fetch existing claimant for workflows
+    const existingRes = await supabaseServer.from('claimants').select('*').or(`id.eq.${id},external_id.eq.${id}`).limit(1).maybeSingle()
+    if (existingRes.error) throw existingRes.error
+    const oldClaimant = (existingRes.data as AnyClaimant) || null
+
     // Try update by primary id first
     let res = await supabaseServer.from('claimants').update(patch).eq('id', id).select().limit(1).maybeSingle()
     if (res.error) throw res.error
-    if (res.data) return (res.data as AnyClaimant) || null
+    let updated = (res.data as AnyClaimant) || null
+    if (!updated) {
+      // fallback: try update by external_id
+      const alt = await supabaseServer.from('claimants').update(patch).eq('external_id', id).select().limit(1).maybeSingle()
+      if (alt.error) throw alt.error
+      updated = (alt.data as AnyClaimant) || null
+    }
 
-    // fallback: try update by external_id
-    const alt = await supabaseServer.from('claimants').update(patch).eq('external_id', id).select().limit(1).maybeSingle()
-    if (alt.error) throw alt.error
-    return (alt.data as AnyClaimant) || null
+    if (updated) {
+      try {
+        const after = await updateClaimantWithWorkflows(oldClaimant, updated)
+        if (after?.enriched_data) {
+          await supabaseServer.from('claimants').update({ enriched_data: after.enriched_data }).eq('id', after.id)
+        }
+        return after
+      } catch (e) {
+        // eslint-disable-next-line no-console
+        console.warn('[claimantStore] workflows failed:', (e as any)?.message || e)
+        return updated
+      }
+    }
+    return null
   }
   const all = await readAllFile()
   const idx = all.findIndex((c) => c.id === id || c.external_id === id)
   if (idx === -1) return null
+  const oldClaimant = all[idx]
   const updated = { ...all[idx], ...patch }
   all[idx] = updated
   await writeAllFile(all)
+  try {
+    const after = await updateClaimantWithWorkflows(oldClaimant, updated)
+    if (after && after !== updated) {
+      all[idx] = after
+      await writeAllFile(all)
+      return after
+    }
+  } catch (e) {
+    // eslint-disable-next-line no-console
+    console.warn('[claimantStore] workflows failed (file):', (e as any)?.message || e)
+  }
   return updated
 }
 

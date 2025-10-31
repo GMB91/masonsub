@@ -1,0 +1,58 @@
+[
+  {
+    "id": "6983bd05-f815-4b33-99e3-fba83ed89e89",
+    "claimant_id": "mheoeqlc-nc4lv1",
+    "timestamp": "2025-10-31T09:53:54.726Z",
+    "type": "skip-trace",
+    "payload": {
+      "phones": [
+        "0400 000 000"
+      ],
+      "emails": [
+        "unknown@example.com"
+      ],
+      "addresses": [
+        "123 Example St, Brisbane QLD 4000"
+      ],
+      "employment": [
+        {
+          "company": "Example Pty Ltd",
+          "title": "Manager"
+        }
+      ],
+      "confidence": 75,
+      "raw": {
+        "provider": "stub"
+      }
+    },
+    "confidence": 75
+  },
+  {
+    "id": "e1d778e8-5590-4654-bd28-27124c231aae",
+    "claimant_id": "mheofinl-q30aap",
+    "timestamp": "2025-10-31T09:54:31.093Z",
+    "type": "skip-trace",
+    "payload": {
+      "phones": [
+        "0400 000 000"
+      ],
+      "emails": [
+        "unknown@example.com"
+      ],
+      "addresses": [
+        "123 Example St, Brisbane QLD 4000"
+      ],
+      "employment": [
+        {
+          "company": "Example Pty Ltd",
+          "title": "Manager"
+        }
+      ],
+      "confidence": 75,
+      "raw": {
+        "provider": "stub"
+      }
+    },
+    "confidence": 75
+  }
+]

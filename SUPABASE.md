@@ -1,4 +1,4 @@
-Supabase integration notes
+$env:DATABASE_URL='postgres://BAhKbYWjZhjc3fpe@db.lvcnsbedlbnondlzadyl.supabase.co:5432/postgres; npm run migrate:apply:applySupabase integration notes
 
 This repository supports a Supabase-backed persistence layer for `claimants` (server-side). The code is written so that when a server-side Supabase service-role key is present it will use Supabase; otherwise it falls back to the local file-backed store at `data/claimants.json`.
 
@@ -47,25 +47,67 @@ Using the Supabase CLI (recommended):
    supabase db remote set <your-connection-string>
    psql "$DATABASE_URL" -f migrations/create_claimants.sql
 
-Or directly with psql (example):
+# Supabase integration notes
 
-   PGPASSWORD=<db_password> psql -h <db_host> -U <db_user> -d <db_name> -f migrations/create_claimants.sql
+> Security note: do NOT store live DATABASE_URL values, service role keys, or other secrets in tracked files (including this README). Move any connection strings into environment variables, your CI secrets store, or a local `.mcp/supabase.json` file (gitignored).
+
+This repository supports a Supabase-backed persistence layer for `claimants` (server-side). When server-side Supabase credentials are available the app will use Supabase; otherwise it falls back to the local file-backed store at `data/claimants.json` for development and tests.
+
+Required environment variables
+
+- `NEXT_PUBLIC_SUPABASE_URL` — your Supabase project URL (for client-side usage)
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY` — your anon/public API key (client-side)
+- `SUPABASE_SERVICE_ROLE_KEY` — service role (server-only) key used by server routes to perform DB writes
+- `SUPABASE_URL` — optional alternate name for the project URL
+
+Optional: MCP/local creds file
+
+If your environment provides Supabase credentials via an external system (for example a Machine Control Plane or CI), you can write them into a local, gitignored file at `.mcp/supabase.json`. The application prefers environment variables first, then falls back to this file.
+
+Recommended minimal `.mcp/supabase.json` for local tooling (do NOT commit):
+
+```json
+{
+  "url": "https://your-project.supabase.co",
+  "anonKey": "pub.example.anonymous.key",
+  "serviceRoleKey": "service_role.example_key",
+  "databaseUrl": "postgres://user:password@db.host:5432/postgres"
+}
+```
+
+Notes:
+- `serviceRoleKey` is used by server-side code that needs elevated privileges (do not expose it to browsers).
+- `databaseUrl` is optional; if present the local migration runner (`npm run migrate:apply`) will use it when `DATABASE_URL` is not set in the environment.
+- `.mcp/supabase.json` is gitignored by default in this repo; treat it like a secrets file and do not commit it.
+
+Database migration
+
+A set of SQL migration files live in the `migrations/` directory. A small Node migration runner is included that records applied migrations and can apply any `.sql` files in order.
+
+Runner (recommended):
+
+- `npm run migrate:apply` — runs `scripts/apply-migrations.js`. It reads `DATABASE_URL` from the environment or falls back to `.mcp/supabase.json`'s `databaseUrl` field.
+
+One-line PowerShell example (replace with your connection string):
+
+```powershell
+$env:DATABASE_URL='postgres://user:password@db.host:5432/postgres'; npm run migrate:apply
+```
+
+Or run a single file directly with `psql` if you prefer.
 
 Notes
 
-- The migration creates a `claimants` table with a text `id` primary key to match the existing application IDs. If you'd prefer UUIDs, adjust the `id` column and update code that creates IDs.
-- Indexes for `org` and `email` are created to speed up typical queries.
-
-Seeding data
-
-You can insert seed rows with plain SQL or use the existing local seed at `src/lib/data/seed.ts` to generate JSON rows and insert them manually using SQL or via the Supabase SQL editor.
+- The runner creates a `migrations` table to track applied files so it will not reapply the same migration twice.
+- The DB user used must have privileges for DDL (CREATE TABLE, etc.).
+- Keep secrets out of checked-in files; use environment variables, `.mcp/supabase.json`, or your CI secrets manager.
 
 Programmatic seed helper
 
-I included a runtime seed helper at `scripts/seed.js`. It supports two modes:
+There is a seed helper at `scripts/seed.js`. It supports two modes:
 
-- `DATABASE_URL` (Postgres connection string): will upsert sample rows using `pg`.
-- `SUPABASE_SERVICE_ROLE_KEY` + `NEXT_PUBLIC_SUPABASE_URL`: will upsert sample rows using `@supabase/supabase-js` and the service role key.
+- Using `DATABASE_URL` (Postgres connection string): upserts sample rows using `pg`.
+- Using `SUPABASE_SERVICE_ROLE_KEY` + `NEXT_PUBLIC_SUPABASE_URL`: upserts rows using `@supabase/supabase-js` and the service role key.
 
 Run examples (PowerShell):
 
@@ -84,10 +126,10 @@ npm run seed
 
 Security & RLS
 
-- If you enable Row Level Security (RLS) in Supabase, define appropriate policies for reads/writes (service role key bypasses RLS; use for server-only operations).
-- Never commit the service role key to source control. Use environment variables on your deployment platform.
+- If you enable Row Level Security (RLS) in Supabase, define appropriate policies for reads/writes. A service role key bypasses RLS and should only be used server-side.
+- Never commit the service role key or database connection strings to source control. Use environment variables, `.mcp/supabase.json`, or your CI secrets manager.
 
 Next steps
 
 - Provide `NEXT_PUBLIC_SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` in your deployment environment to use Supabase in production.
-- Optionally adapt the `id` column to UUIDs and add migrations if you prefer database-generated IDs.
+- Remove any plain-text `DATABASE_URL` values from documentation, commits, or other files in the repo.
