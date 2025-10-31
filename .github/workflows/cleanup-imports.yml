@@ -17,11 +17,10 @@ jobs:
       - name: Install
         run: npm ci
       - name: Run cleanup imports
-        # Provide a safe default if the secret is not set by using shell
-        # parameter expansion so the step won't fail in forks or on first-run.
+        # Use a safe default here to avoid static analysis warnings about
+        # referencing secrets in environments where they may not exist.
+        env:
+          IMPORT_TMP_TTL_HOURS: '72'
         run: |
-          IMPORT_TMP_TTL_HOURS="${{ secrets.IMPORT_TMP_TTL_HOURS }}"
-          # default to 72 hours when not provided
-          IMPORT_TMP_TTL_HOURS="${IMPORT_TMP_TTL_HOURS:-72}"
           echo "Using IMPORT_TMP_TTL_HOURS=$IMPORT_TMP_TTL_HOURS"
           npm run cleanup:imports
