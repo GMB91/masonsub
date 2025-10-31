@@ -4,6 +4,7 @@ import React, { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
+import { isValidEmail, isValidPhone } from '@/lib/validation'
 
 export default function NewClaimantPage({ params }: { params: { org: string } }) {
   const router = useRouter()
@@ -12,11 +13,20 @@ export default function NewClaimantPage({ params }: { params: { org: string } })
   const [phone, setPhone] = useState("")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [fieldErrors, setFieldErrors] = useState<{ name?: string; email?: string; phone?: string }>({})
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
-    if (!name.trim()) return setError("Name is required")
+    const nextFieldErrors: { name?: string; email?: string; phone?: string } = {}
+    if (!name.trim()) nextFieldErrors.name = 'Name is required'
+    if (email && !isValidEmail(email)) nextFieldErrors.email = 'Enter a valid email address'
+    if (phone && !isValidPhone(phone)) nextFieldErrors.phone = 'Enter a valid phone number'
+    if (Object.keys(nextFieldErrors).length) {
+      setFieldErrors(nextFieldErrors)
+      return setError('Please fix the highlighted fields')
+    }
+    setFieldErrors({})
     setLoading(true)
     try {
       const res = await fetch(`/api/claimants`, {
@@ -44,33 +54,52 @@ export default function NewClaimantPage({ params }: { params: { org: string } })
           <CardTitle>Create claimant</CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4" noValidate>
             <div>
-              <label className="block text-sm font-medium">Name</label>
+              <label htmlFor="name" className="block text-sm font-medium">Name</label>
               <input
+                id="name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="mt-1 w-full rounded-md border px-3 py-2"
+                className={`mt-1 w-full rounded-md border px-3 py-2 ${fieldErrors.name ? 'border-destructive' : ''}`}
+                aria-invalid={!!fieldErrors.name}
+                aria-describedby={fieldErrors.name ? 'name-error' : undefined}
                 required
               />
+              {fieldErrors.name && (
+                <div id="name-error" role="alert" className="text-sm text-destructive mt-1">{fieldErrors.name}</div>
+              )}
             </div>
 
             <div>
-              <label className="block text-sm font-medium">Email</label>
+              <label htmlFor="email" className="block text-sm font-medium">Email</label>
               <input
+                id="email"
+                type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="mt-1 w-full rounded-md border px-3 py-2"
+                className={`mt-1 w-full rounded-md border px-3 py-2 ${fieldErrors.email ? 'border-destructive' : ''}`}
+                aria-invalid={!!fieldErrors.email}
+                aria-describedby={fieldErrors.email ? 'email-error' : undefined}
               />
+              {fieldErrors.email && (
+                <div id="email-error" role="alert" className="text-sm text-destructive mt-1">{fieldErrors.email}</div>
+              )}
             </div>
 
             <div>
-              <label className="block text-sm font-medium">Phone</label>
+              <label htmlFor="phone" className="block text-sm font-medium">Phone</label>
               <input
+                id="phone"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                className="mt-1 w-full rounded-md border px-3 py-2"
+                className={`mt-1 w-full rounded-md border px-3 py-2 ${fieldErrors.phone ? 'border-destructive' : ''}`}
+                aria-invalid={!!fieldErrors.phone}
+                aria-describedby={fieldErrors.phone ? 'phone-error' : undefined}
               />
+              {fieldErrors.phone && (
+                <div id="phone-error" role="alert" className="text-sm text-destructive mt-1">{fieldErrors.phone}</div>
+              )}
             </div>
 
             {error && <div className="text-sm text-destructive">{error}</div>}

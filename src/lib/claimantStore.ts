@@ -1,90 +1,159 @@
-import { promises as fs } from "fs"
-import path from "path"
+/*
+  claimantStore: Supabase-first implementation with a file-backed fallback.
 
-export type Claimant = {
-  id: string
-  org: string
-  name: string
-  email?: string
-  phone?: string
-  createdAt: string
-  [key: string]: unknown
+  Exports (named and default):
+    - getClaimants(org?)
+    - getClaimantById(id)
+    - createClaimant(payload)
+    - updateClaimant(id, patch)
+    - deleteClaimant(id)
+
+  Behavior:
+    - If `supabaseServer` (service role client) is available, use the 'claimants' table there.
+    - Otherwise fall back to a simple file-backed JSON store at ./data/claimants.json so local dev continues to work.
+*/
+import { promises as fs } from 'fs'
+import path from 'path'
+import { supabaseServer } from './supabaseClient'
+
+type AnyClaimant = Record<string, any> & { id: string; external_id?: string }
+
+function isUuid(str?: string) {
+  if (!str) return false
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(str)
 }
 
-// allow overriding data dir for tests via CLAIMANT_DATA_DIR env var
-const DATA_DIR = process.env.CLAIMANT_DATA_DIR
-  ? path.resolve(process.env.CLAIMANT_DATA_DIR)
-  : path.resolve(process.cwd(), "data")
-const FILE = path.join(DATA_DIR, "claimants.json")
+const DATA_DIR = process.env.CLAIMANT_DATA_DIR ? path.resolve(process.env.CLAIMANT_DATA_DIR) : path.join(process.cwd(), 'data')
+const FILE = path.join(DATA_DIR, 'claimants.json')
 
 async function ensureFile() {
   try {
     await fs.mkdir(DATA_DIR, { recursive: true })
     await fs.access(FILE)
   } catch {
-    await fs.writeFile(FILE, JSON.stringify([]), "utf-8")
+    await fs.writeFile(FILE, JSON.stringify([]), 'utf-8')
   }
 }
 
-async function readAll(): Promise<Claimant[]> {
+async function readAllFile(): Promise<AnyClaimant[]> {
   await ensureFile()
-  const raw = await fs.readFile(FILE, "utf-8")
+  const raw = await fs.readFile(FILE, 'utf-8')
   try {
-    return JSON.parse(raw) as Claimant[]
+    return JSON.parse(raw) as AnyClaimant[]
   } catch {
     return []
   }
 }
 
-async function writeAll(items: Claimant[]) {
+async function writeAllFile(items: AnyClaimant[]) {
   await ensureFile()
-  await fs.writeFile(FILE, JSON.stringify(items, null, 2), "utf-8")
+  await fs.writeFile(FILE, JSON.stringify(items, null, 2), 'utf-8')
 }
 
 export async function getClaimants(org?: string) {
-  const all = await readAll()
+  if (supabaseServer) {
+    let query = supabaseServer.from('claimants').select('*')
+    if (org) query = query.eq('org', org)
+    const { data, error } = await query
+    if (error) throw error
+    return (data as AnyClaimant[]) || []
+  }
+  // fallback file store
+  const all = await readAllFile()
   if (!org) return all
-  return all.filter((c) => c.org === org)
+  return all.filter((c) => (c.org ?? 'demo') === org)
 }
 
 export async function getClaimantById(id: string) {
-  const all = await readAll()
-  return all.find((c) => c.id === id)
+  if (supabaseServer) {
+    // Try by primary id (uuid) first, then by external_id for legacy ids
+    let res = await supabaseServer.from('claimants').select('*').eq('id', id).limit(1).maybeSingle()
+    if (res.error) throw res.error
+    if (res.data) return res.data as AnyClaimant
+
+    // fallback to external_id
+    const alt = await supabaseServer.from('claimants').select('*').eq('external_id', id).limit(1).maybeSingle()
+    if (alt.error) throw alt.error
+    return (alt.data as AnyClaimant) || null
+  }
+  const all = await readAllFile()
+  return all.find((c) => c.id === id || c.external_id === id) || null
 }
 
-export async function createClaimant(payload: Partial<Claimant>) {
-  const all = await readAll()
-  const id = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
-  const now = new Date().toISOString()
-  const claimant: Claimant = {
+export async function createClaimant(payload: Record<string, any>) {
+  if (supabaseServer) {
+    // If caller provided a UUID as id, respect it. If caller provided a legacy/text id
+    // (like c-123), store it in external_id and generate a UUID for the primary id.
+    const inputId = payload.id as string | undefined
+    const externalId = inputId && !isUuid(inputId) ? inputId : undefined
+    const id = inputId && isUuid(inputId) ? inputId : (globalThis.crypto && (globalThis.crypto as any).randomUUID ? (globalThis.crypto as any).randomUUID() : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2,8)}`)
+
+    const record: Record<string, any> = {
+      id,
+      ...payload,
+    }
+    if (externalId) {
+      record.external_id = externalId
+      // avoid inserting the legacy id value into the uuid id column
+      delete record.id // will be re-set below
+      record.id = id
+    }
+
+    const { data, error } = await supabaseServer.from('claimants').insert(record).select().limit(1).maybeSingle()
+    if (error) throw error
+    return (data as AnyClaimant) || null
+  }
+  const all = await readAllFile()
+  const inputId = payload.id as string | undefined
+  const externalId = inputId && !isUuid(inputId) ? inputId : undefined
+  const id = inputId && isUuid(inputId) ? inputId : (payload.id ?? `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`)
+  const claimant: AnyClaimant = {
     id,
-    org: payload.org ?? "demo",
-    name: (payload.name as string) ?? "Unnamed",
-    email: payload.email as string | undefined,
-    phone: payload.phone as string | undefined,
-    createdAt: now,
     ...payload,
   }
+  if (externalId) claimant.external_id = externalId
   all.push(claimant)
-  await writeAll(all)
+  await writeAllFile(all)
   return claimant
 }
 
-export async function updateClaimant(id: string, patch: Partial<Claimant>) {
-  const all = await readAll()
-  const idx = all.findIndex((c) => c.id === id)
+export async function updateClaimant(id: string, patch: Partial<AnyClaimant>) {
+  if (supabaseServer) {
+    // Try update by primary id first
+    let res = await supabaseServer.from('claimants').update(patch).eq('id', id).select().limit(1).maybeSingle()
+    if (res.error) throw res.error
+    if (res.data) return (res.data as AnyClaimant) || null
+
+    // fallback: try update by external_id
+    const alt = await supabaseServer.from('claimants').update(patch).eq('external_id', id).select().limit(1).maybeSingle()
+    if (alt.error) throw alt.error
+    return (alt.data as AnyClaimant) || null
+  }
+  const all = await readAllFile()
+  const idx = all.findIndex((c) => c.id === id || c.external_id === id)
   if (idx === -1) return null
   const updated = { ...all[idx], ...patch }
   all[idx] = updated
-  await writeAll(all)
+  await writeAllFile(all)
   return updated
 }
 
 export async function deleteClaimant(id: string) {
-  const all = await readAll()
-  const filtered = all.filter((c) => c.id !== id)
+  if (supabaseServer) {
+    // Try delete by primary id first
+    let res = await supabaseServer.from('claimants').delete().eq('id', id)
+    if (res.error) throw res.error
+    if (res.count && res.count > 0) return true
+
+    // fallback: delete by external_id
+    const alt = await supabaseServer.from('claimants').delete().eq('external_id', id)
+    if (alt.error) throw alt.error
+    return !!(alt.count && alt.count > 0)
+  }
+  const all = await readAllFile()
+  const filtered = all.filter((c) => c.id !== id && c.external_id !== id)
   if (filtered.length === all.length) return false
-  await writeAll(filtered)
+  await writeAllFile(filtered)
   return true
 }
 

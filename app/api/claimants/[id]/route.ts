@@ -1,5 +1,6 @@
 import claimantStore from "@/lib/claimantStore"
 import { ok, fail } from '@/lib/apiResponse'
+import { isValidEmail, isValidPhone, normalizePhone } from '@/lib/validation'
 
 // Flexible context handling to satisfy Next validator types
 export async function GET(_request: Request, context: unknown) {
@@ -27,6 +28,16 @@ export async function PUT(request: Request, context: unknown) {
     if (!id) return fail('Missing id', 400)
     try {
       const body = (await request.json()) as Record<string, unknown>
+      // validate optional update fields
+      if (body.email && typeof body.email === 'string' && !isValidEmail(body.email)) {
+        return fail('Invalid email format', 400)
+      }
+      if (body.phone && typeof body.phone === 'string' && !isValidPhone(body.phone)) {
+        return fail('Invalid phone number', 400)
+      }
+      if (body.phone && typeof body.phone === 'string') {
+        body.phone = normalizePhone(body.phone)
+      }
       const updated = await claimantStore.updateClaimant(id as string, body)
       if (!updated) return fail('Not found', 404)
       return ok({ claimant: updated })

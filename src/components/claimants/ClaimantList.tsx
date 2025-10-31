@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
-import type { Claimant } from "@/lib/claimantStore"
+import type { Claimant } from "@/types/claimant"
 import Modal from "@/components/ui/modal"
 import Snackbar from "@/components/ui/snackbar"
 import Confirm from "@/components/ui/confirm"
@@ -20,6 +20,7 @@ export default function ClaimantList({ org, initial = [] }: Props) {
   const [creating, setCreating] = useState(false)
   const [name, setName] = useState("")
   const [error, setError] = useState<string | null>(null)
+  const [createFieldError, setCreateFieldError] = useState<string | null>(null)
 
   async function load() {
     setLoading(true)
@@ -44,7 +45,11 @@ export default function ClaimantList({ org, initial = [] }: Props) {
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
-    if (!name.trim()) return setError("Name is required")
+    setCreateFieldError(null)
+    if (!name.trim()) {
+      setCreateFieldError('Name is required')
+      return setError('Please fix the highlighted fields')
+    }
     setCreating(true)
     try {
       const res = await fetch(`/api/claimants`, {
@@ -56,6 +61,7 @@ export default function ClaimantList({ org, initial = [] }: Props) {
       const body = await res.json()
       setClaimants((s) => [body.claimant, ...s])
       setName("")
+      setCreateFieldError(null)
     } catch (err) {
       setError(String(err))
     } finally {
@@ -136,6 +142,7 @@ export default function ClaimantList({ org, initial = [] }: Props) {
   const [modalOpen, setModalOpen] = useState(false)
   const [modalClaimant, setModalClaimant] = useState<Claimant | null>(null)
   const [editValues, setEditValues] = useState<Partial<Claimant>>({})
+  const [modalFieldErrors, setModalFieldErrors] = useState<{ name?: string; email?: string; phone?: string }>({})
   const [snack, setSnack] = useState<{ open: boolean; message?: string | null; actionLabel?: string; onAction?: (() => void) }>(
     { open: false }
   )
@@ -154,6 +161,21 @@ export default function ClaimantList({ org, initial = [] }: Props) {
 
   async function saveEdit() {
     if (!modalClaimant) return
+    // validate before saving
+    const nextErrors: { name?: string; email?: string; phone?: string } = {}
+    if (!editValues.name || String(editValues.name).trim() === '') nextErrors.name = 'Name is required'
+    if (editValues.email && typeof editValues.email === 'string' && !isValidEmail(editValues.email)) nextErrors.email = 'Enter a valid email address'
+    if (editValues.phone && typeof editValues.phone === 'string') {
+      const normalized = normalizePhone(editValues.phone)
+      if (!isValidPhone(normalized)) nextErrors.phone = 'Enter a valid phone number'
+      else editValues.phone = normalized
+    }
+    if (Object.keys(nextErrors).length) {
+      setModalFieldErrors(nextErrors)
+      setError('Please fix the highlighted fields')
+      return
+    }
+    setModalFieldErrors({})
     await handleUpdate(modalClaimant.id, editValues)
     closeModal()
     setSnack({ open: true, message: "Claimant updated" })
@@ -166,12 +188,21 @@ export default function ClaimantList({ org, initial = [] }: Props) {
       </div>
 
       <form onSubmit={handleCreate} className="flex gap-2">
-        <input
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="New claimant name"
-          className="rounded-md border px-3 py-2"
-        />
+        <div className="flex-1">
+          <label htmlFor="create-name" className="sr-only">New claimant name</label>
+          <input
+            id="create-name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="New claimant name"
+            className={`w-full rounded-md border px-3 py-2 ${createFieldError ? 'border-destructive' : ''}`}
+            aria-invalid={!!createFieldError}
+            aria-describedby={createFieldError ? 'create-name-error' : undefined}
+          />
+          {createFieldError && (
+            <div id="create-name-error" role="alert" className="text-sm text-destructive mt-1">{createFieldError}</div>
+          )}
+        </div>
         <Button type="submit" disabled={creating}>{creating ? "Creating…" : "Create"}</Button>
         <Button variant="outline" onClick={() => load()}>Refresh</Button>
       </form>
@@ -212,30 +243,49 @@ export default function ClaimantList({ org, initial = [] }: Props) {
   <Modal open={modalOpen} title={modalClaimant ? `Edit ${modalClaimant.name}` : "Edit"} onClose={closeModal}>
         <div className="space-y-3">
           <div>
-            <label className="block text-sm font-medium">Name</label>
+            <label htmlFor="modal-name" className="block text-sm font-medium">Name</label>
             <input
-              className="mt-1 w-full rounded-md border px-3 py-2"
+              id="modal-name"
+              className={`mt-1 w-full rounded-md border px-3 py-2 ${modalFieldErrors.name ? 'border-destructive' : ''}`}
               value={(editValues.name as string) ?? ""}
               onChange={(e) => setEditValues((s) => ({ ...s, name: e.target.value }))}
+              aria-invalid={!!modalFieldErrors.name}
+              aria-describedby={modalFieldErrors.name ? 'modal-name-error' : undefined}
             />
+            {modalFieldErrors.name && (
+              <div id="modal-name-error" role="alert" className="text-sm text-destructive mt-1">{modalFieldErrors.name}</div>
+            )}
           </div>
 
           <div>
-            <label className="block text-sm font-medium">Email</label>
+            <label htmlFor="modal-email" className="block text-sm font-medium">Email</label>
             <input
-              className="mt-1 w-full rounded-md border px-3 py-2"
+              id="modal-email"
+              className={`mt-1 w-full rounded-md border px-3 py-2 ${modalFieldErrors.email ? 'border-destructive' : ''}`}
               value={(editValues.email as string) ?? ""}
               onChange={(e) => setEditValues((s) => ({ ...s, email: e.target.value }))}
+              aria-invalid={!!modalFieldErrors.email}
+              aria-describedby={modalFieldErrors.email ? 'modal-email-error' : undefined}
+              type="email"
             />
+            {modalFieldErrors.email && (
+              <div id="modal-email-error" role="alert" className="text-sm text-destructive mt-1">{modalFieldErrors.email}</div>
+            )}
           </div>
 
           <div>
-            <label className="block text-sm font-medium">Phone</label>
+            <label htmlFor="modal-phone" className="block text-sm font-medium">Phone</label>
             <input
-              className="mt-1 w-full rounded-md border px-3 py-2"
+              id="modal-phone"
+              className={`mt-1 w-full rounded-md border px-3 py-2 ${modalFieldErrors.phone ? 'border-destructive' : ''}`}
               value={(editValues.phone as string) ?? ""}
               onChange={(e) => setEditValues((s) => ({ ...s, phone: e.target.value }))}
+              aria-invalid={!!modalFieldErrors.phone}
+              aria-describedby={modalFieldErrors.phone ? 'modal-phone-error' : undefined}
             />
+            {modalFieldErrors.phone && (
+              <div id="modal-phone-error" role="alert" className="text-sm text-destructive mt-1">{modalFieldErrors.phone}</div>
+            )}
           </div>
 
           <div className="flex items-center gap-2 justify-end">

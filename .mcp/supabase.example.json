@@ -1,0 +1,5 @@
+{
+  "url": "https://your-project.supabase.co",
+  "anonKey": "public-anon-key-or-empty",
+  "serviceRoleKey": "service_role.your_secret_key"
+}

@@ -9,8 +9,8 @@ export default function Dashboard() {
     { label: "Last Activity", value: "2h ago" },
   ]
   return (
-    <main className="p-8 space-y-6">
-      <h1 className="text-2xl font-bold">MasonSub Dashboard</h1>
+    <section aria-labelledby="page-title" className="p-8 space-y-6">
+      <h1 id="page-title" className="text-2xl font-bold">MasonSub Dashboard</h1>
       <div className="grid gap-4 md:grid-cols-4">
         {stats.map((s) => (
           <Card key={s.label}>
@@ -24,6 +24,6 @@ export default function Dashboard() {
         <Button>Billing</Button>
         <Button>Security</Button>
       </div>
-    </main>
+  </section>
   )
 }

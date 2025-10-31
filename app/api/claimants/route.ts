@@ -1,5 +1,6 @@
 import claimantStore from "@/lib/claimantStore"
 import { ok, fail } from '@/lib/apiResponse'
+import { isValidEmail, isValidPhone, normalizePhone } from '@/lib/validation'
 
 export async function GET(request: Request) {
   try {
@@ -20,6 +21,17 @@ export async function POST(request: Request) {
     const body = (await request.json()) as Record<string, unknown>
     if (!body.name) {
       return fail('Missing required field: name', 400)
+    }
+    // validate optional fields
+    if (body.email && typeof body.email === 'string' && !isValidEmail(body.email)) {
+      return fail('Invalid email format', 400)
+    }
+    if (body.phone && typeof body.phone === 'string' && !isValidPhone(body.phone)) {
+      return fail('Invalid phone number', 400)
+    }
+    // normalize phone before persisting
+    if (body.phone && typeof body.phone === 'string') {
+      body.phone = normalizePhone(body.phone)
     }
     const created = await claimantStore.createClaimant(body)
     return ok({ claimant: created }, 201)

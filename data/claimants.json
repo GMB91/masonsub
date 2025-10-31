@@ -1,1 +1,14 @@
-[]
+[
+  {
+    "id": "c-123",
+    "name": "Alice Example",
+    "email": "alice@example.com",
+    "external_id": "c-123"
+  },
+  {
+    "id": "c-456",
+    "name": "Bob Smith",
+    "email": "bob@example.com",
+    "external_id": "c-456"
+  }
+]
