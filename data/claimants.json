@@ -1,14 +1,29 @@
 [
   {
-    "id": "c-123",
+    "id": "c-existing",
     "name": "Alice Example",
     "email": "alice@example.com",
-    "external_id": "c-123"
+    "org": "demo",
+    "external_id": "c-existing"
   },
   {
-    "id": "c-456",
-    "name": "Bob Smith",
-    "email": "bob@example.com",
-    "external_id": "c-456"
+    "id": "mheiaq30-f9c2n3",
+    "name": "Alice",
+    "email": "a@example.com",
+    "externalId": "ext-1",
+    "org": "demo"
+  },
+  {
+    "id": "mheiaq38-je1fav",
+    "name": "Bob",
+    "email": "b@example.com",
+    "externalId": "ext-2",
+    "org": "demo"
+  },
+  {
+    "id": "mheiaq47-ne3yzl",
+    "name": "New Person",
+    "email": "new@example.com",
+    "org": "demo"
   }
 ]

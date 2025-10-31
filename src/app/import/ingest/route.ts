@@ -16,8 +16,8 @@ export async function POST(req: Request) {
 
     const results: { created: number; updated: number; errors: any[] } = { created: 0, updated: 0, errors: [] }
 
-    // load existing claimants once per org
-    const existing = await store.getClaimants(org)
+    // load existing claimants once per org (we'll keep this updated as we create/update)
+    let existing = await store.getClaimants(org)
 
     for (const row of mapped) {
       try {
@@ -27,18 +27,28 @@ export async function POST(req: Request) {
           claimId: (row.claimId as string) || row['Claim ID'] || row['claim_id'] || undefined,
           externalId: (row.external_id as string) || row['External ID'] || row['externalId'] || row['id'] || undefined,
         }
-
         const dup = findDuplicate(candidate as any, existing as any)
         const payload: Record<string, any> = { ...row, org }
 
         if (dup) {
           // update existing claimant
-          await store.updateClaimant(dup.claimant.id, payload)
-          results.updated += 1
+          const updated = await store.updateClaimant(dup.claimant.id, payload)
+          if (updated) {
+            results.updated += 1
+            // reflect update in our in-memory list
+            const idx = existing.findIndex((e: any) => e.id === dup.claimant.id)
+            if (idx !== -1) existing[idx] = updated as any
+          } else {
+            // If update failed, fallback to upsert which will create if necessary
+            const up = await (store as any).upsertClaimant(payload)
+            results[up.action === 'created' ? 'created' : 'updated'] += 1
+            if (up.claimant) existing.push(up.claimant as any)
+          }
         } else {
-          // create new claimant
-          await store.createClaimant(payload)
-          results.created += 1
+          // create or upsert new claimant (idempotent)
+          const up = await (store as any).upsertClaimant(payload)
+          results[up.action === 'created' ? 'created' : 'updated'] += 1
+          if (up.claimant) existing.push(up.claimant as any)
         }
       } catch (e: any) {
         results.errors.push(String(e?.message || e))

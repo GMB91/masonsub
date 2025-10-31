@@ -47,7 +47,51 @@ async function readAllFile(): Promise<AnyClaimant[]> {
 
 async function writeAllFile(items: AnyClaimant[]) {
   await ensureFile()
-  await fs.writeFile(FILE, JSON.stringify(items, null, 2), 'utf-8')
+  // write atomically: write to temp file then rename
+  const tmp = `${FILE}.tmp`
+  await fs.writeFile(tmp, JSON.stringify(items, null, 2), 'utf-8')
+  await fs.rename(tmp, FILE)
+}
+
+export async function upsertClaimant(payload: Record<string, any>) {
+  // Try to update by primary id or external_id; if none matched, create a new claimant.
+  // This provides idempotent behavior for ingest flows.
+  const inputId = payload.id as string | undefined
+  const externalId = inputId && !isUuid(inputId) ? inputId : payload.external_id || undefined
+
+  if (supabaseServer) {
+    // Attempt update by id
+    if (inputId && isUuid(inputId)) {
+      const upd = await supabaseServer.from('claimants').update(payload).eq('id', inputId).select().limit(1).maybeSingle()
+      if (upd.error) throw upd.error
+      if (upd.data) return { action: 'updated', claimant: upd.data as AnyClaimant }
+    }
+    // Attempt update by external_id
+    if (externalId) {
+      const upd2 = await supabaseServer.from('claimants').update(payload).eq('external_id', externalId).select().limit(1).maybeSingle()
+      if (upd2.error) throw upd2.error
+      if (upd2.data) return { action: 'updated', claimant: upd2.data as AnyClaimant }
+    }
+    // Fallback: insert
+    const { data, error } = await supabaseServer.from('claimants').insert({ ...payload }).select().limit(1).maybeSingle()
+    if (error) throw error
+    return { action: 'created', claimant: (data as AnyClaimant) || null }
+  }
+
+  // file-backed logic
+  const all = await readAllFile()
+  // find by id or external_id
+  const idx = all.findIndex((c) => c.id === inputId || (externalId && c.external_id === externalId))
+  if (idx !== -1) {
+    const updated = { ...all[idx], ...payload }
+    all[idx] = updated
+    await writeAllFile(all)
+    return { action: 'updated', claimant: updated }
+  }
+
+  // create
+  const created = await createClaimant(payload)
+  return { action: 'created', claimant: created }
 }
 
 export async function getClaimants(org?: string) {
@@ -163,6 +207,7 @@ const store = {
   createClaimant,
   updateClaimant,
   deleteClaimant,
+  upsertClaimant,
 }
 
 export default store

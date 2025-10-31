@@ -1,0 +1,78 @@
+{
+  "org": "demo",
+  "suggestedMapping": {
+    "Full Name": {
+      "top": {
+        "target": "name",
+        "confidence": 1
+      },
+      "alternatives": [
+        {
+          "target": "email",
+          "confidence": 0
+        },
+        {
+          "target": "claimId",
+          "confidence": 0
+        },
+        {
+          "target": "externalId",
+          "confidence": 0
+        }
+      ]
+    },
+    "Email": {
+      "top": {
+        "target": "email",
+        "confidence": 1
+      },
+      "alternatives": [
+        {
+          "target": "name",
+          "confidence": 0
+        },
+        {
+          "target": "claimId",
+          "confidence": 0
+        },
+        {
+          "target": "externalId",
+          "confidence": 0
+        }
+      ]
+    }
+  },
+  "preview": [
+    {
+      "Full Name": "Alice Example",
+      "Email": "alice@example.com"
+    },
+    {
+      "Full Name": "New Person",
+      "Email": "new@example.com"
+    }
+  ],
+  "headers": [
+    "Full Name",
+    "Email"
+  ],
+  "id": "7f0e2990-95f1-4f1d-95e2-cabcae083156",
+  "mapped": [
+    {
+      "name": "Alice Example",
+      "email": "alice@example.com"
+    },
+    {
+      "name": "New Person",
+      "email": "new@example.com"
+    }
+  ],
+  "ingest": {
+    "ts": 1761894169789,
+    "results": {
+      "created": 1,
+      "updated": 1,
+      "errors": []
+    }
+  }
+}

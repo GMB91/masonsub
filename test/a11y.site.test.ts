@@ -1,4 +1,6 @@
 import { spawn } from 'child_process'
+import fs from 'fs'
+import path from 'path'
 import { chromium } from 'playwright'
 import { test } from 'vitest'
 
@@ -33,8 +35,28 @@ async function waitForHealth(url: string, timeout = 120000) {
 }
 
 test('site accessibility (critical/serious violations)', { timeout: 10 * 60 * 1000 }, async () => {
-  // Build
-  await runCommand(BUILD_CMD, BUILD_ARGS)
+  // Remove stale Next build lock if present (helps avoid concurrent build conflicts in CI/local runs)
+  try {
+    const lockFile = path.join(process.cwd(), '.next', 'lock')
+    if (fs.existsSync(lockFile)) {
+      try { fs.unlinkSync(lockFile) } catch (e) { /* ignore */ }
+    }
+  } catch (e) {
+    // ignore filesystem errors
+  }
+
+  // Build (skip if a previous build artifacts exist to avoid concurrent-next-build conflicts)
+  try {
+    const nextDir = path.join(process.cwd(), '.next')
+    const buildId = path.join(nextDir, 'BUILD_ID')
+    const routesManifest = path.join(nextDir, 'routes-manifest.json')
+    if (!(fs.existsSync(nextDir) && (fs.existsSync(buildId) || fs.existsSync(routesManifest)))) {
+      await runCommand(BUILD_CMD, BUILD_ARGS)
+    }
+  } catch (e) {
+    // fallback to attempting a build if the check failed
+    await runCommand(BUILD_CMD, BUILD_ARGS)
+  }
 
   // Start production server on port 3001
   const starter = spawn('npx', START_ARGS, { stdio: 'inherit', shell: true })

@@ -1,0 +1,103 @@
+{
+  "org": "demo",
+  "suggestedMapping": {
+    "Name": {
+      "top": {
+        "target": "name",
+        "confidence": 1
+      },
+      "alternatives": [
+        {
+          "target": "email",
+          "confidence": 0
+        },
+        {
+          "target": "claimId",
+          "confidence": 0
+        },
+        {
+          "target": "externalId",
+          "confidence": 0
+        }
+      ]
+    },
+    "Email": {
+      "top": {
+        "target": "email",
+        "confidence": 1
+      },
+      "alternatives": [
+        {
+          "target": "name",
+          "confidence": 0
+        },
+        {
+          "target": "claimId",
+          "confidence": 0
+        },
+        {
+          "target": "externalId",
+          "confidence": 0
+        }
+      ]
+    },
+    "ExternalID": {
+      "top": {
+        "target": "externalId",
+        "confidence": 1
+      },
+      "alternatives": [
+        {
+          "target": "claimId",
+          "confidence": 0.9
+        },
+        {
+          "target": "name",
+          "confidence": 0
+        },
+        {
+          "target": "email",
+          "confidence": 0
+        }
+      ]
+    }
+  },
+  "preview": [
+    {
+      "Name": "Alice",
+      "Email": "a@example.com",
+      "ExternalID": "ext-1"
+    },
+    {
+      "Name": "Bob",
+      "Email": "b@example.com",
+      "ExternalID": "ext-2"
+    }
+  ],
+  "headers": [
+    "Name",
+    "Email",
+    "ExternalID"
+  ],
+  "id": "aecac594-81c1-4b19-b2bf-3c39138adf55",
+  "mapped": [
+    {
+      "name": "Alice",
+      "email": "a@example.com",
+      "externalId": "ext-1"
+    },
+    {
+      "name": "Bob",
+      "email": "b@example.com",
+      "externalId": "ext-2"
+    }
+  ],
+  "ingest": {
+    "ts": 1761894169751,
+    "results": {
+      "created": 2,
+      "updated": 0,
+      "errors": []
+    }
+  }
+}
