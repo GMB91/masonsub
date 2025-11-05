@@ -1,0 +1,8 @@
+﻿# Mason Vector Platform - Security Policy
+Contact: security@masonvector.com
+Expires: 2026-12-31T23:59:59.000Z
+Preferred-Languages: en
+Canonical: https://masonvector.com/security.txt
+
+# Please report security vulnerabilities responsibly
+# Do not publicly disclose until we have had time to address

@@ -14,7 +14,7 @@ export async function POST(req: Request) {
     const rows = parseCsv(text)
     const preview = rows.slice(0, 200)
     const headers = Object.keys(preview[0] || {})
-    const suggestedMapping = inferHeaderMapping(headers, preview)
+    const suggestedMapping = inferHeaderMapping(headers)
 
     // cleanup old temp files (default 24h)
     try {
@@ -23,7 +23,8 @@ export async function POST(req: Request) {
       // ignore cleanup failures
     }
 
-    const id = await tmpStore.writeImportData({ org, suggestedMapping, preview, headers })
+    const session = await tmpStore.createImportSession(file.name, rows)
+    const id = session.id
     return NextResponse.redirect(new URL(`/upload/result/${id}`, req.url))
   } catch (err: any) {
     console.error('[import/submit] error', err)

@@ -365,29 +365,6 @@ export const AllSchemas = {
   TraceToolRunSchema,
 };
 
-// Export all types for external use
-export type {
-  Claimant,
-  Reminder,
-  PendingClientInvite,
-  Activity,
-  EmailTemplate,
-  Payment,
-  Timesheet,
-  Message,
-  XeroSync,
-  SMSMessage,
-  SMSTemplate,
-  ClientMessage,
-  AppSettings,
-  Task,
-  CompanyEssential,
-  TraceHistory,
-  ClaimNote,
-  TraceConversation,
-  TraceMessage,
-  TraceToolRun,
-};
 
 // ============================================================================
 // Schema-to-Table Mapping (Supabase Integration)

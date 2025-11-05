@@ -41,7 +41,8 @@ export function useClaimantMutations() {
     onMutate: async (newBody: any) => {
       await qc.cancelQueries({ queryKey: ['claimants'] })
       const optimisticItem = { id: `tmp-${Date.now().toString(36)}`, ...newBody }
-      const previous = optimisticAdd(qc, ['claimants'], optimisticItem)
+      const previous = qc.getQueryData<Claimant[]>(['claimants']) ?? []
+      qc.setQueryData(['claimants'], [...previous, optimisticItem])
       return { previous }
     },
     onError: (_err, _vars, context: any) => {
@@ -62,7 +63,9 @@ export function useClaimantMutations() {
     },
     onMutate: async ({ id, patch }: { id: string; patch: any }) => {
       await qc.cancelQueries({ queryKey: ['claimants'] })
-      const previous = optimisticUpdate(qc, ['claimants'], id, patch)
+      const previous = qc.getQueryData<Claimant[]>(['claimants']) ?? []
+      const next = previous.map((it) => it.id === id ? { ...it, ...patch } : it)
+      qc.setQueryData(['claimants'], next)
       return { previous }
     },
     onError: (_err, _vars, context: any) => {
@@ -83,7 +86,9 @@ export function useClaimantMutations() {
     },
     onMutate: async (id: string) => {
       await qc.cancelQueries({ queryKey: ['claimants'] })
-      const previous = optimisticRemove(qc, ['claimants'], id)
+      const previous = qc.getQueryData<Claimant[]>(['claimants']) ?? []
+      const next = previous.filter((it) => it.id !== id)
+      qc.setQueryData(['claimants'], next)
       return { previous }
     },
     onError: (_err, _vars, context: any) => {

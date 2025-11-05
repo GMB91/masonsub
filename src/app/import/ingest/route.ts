@@ -27,22 +27,27 @@ export async function POST(req: Request) {
           claimId: (row.claimId as string) || row['Claim ID'] || row['claim_id'] || undefined,
           externalId: (row.external_id as string) || row['External ID'] || row['externalId'] || row['id'] || undefined,
         }
-        const dup = findDuplicate(candidate as any, existing as any)
+        const dupResult = findDuplicate([candidate] as any, existing as any)
         const payload: Record<string, any> = { ...row, org }
 
-        if (dup) {
-          // update existing claimant
-          const updated = await store.updateClaimant(dup.claimant.id, payload)
-          if (updated) {
-            results.updated += 1
-            // reflect update in our in-memory list
-            const idx = existing.findIndex((e: any) => e.id === dup.claimant.id)
-            if (idx !== -1) existing[idx] = updated as any
-          } else {
-            // If update failed, fallback to upsert which will create if necessary
-            const up = await (store as any).upsertClaimant(payload)
-            results[up.action === 'created' ? 'created' : 'updated'] += 1
-            if (up.claimant) existing.push(up.claimant as any)
+        if (dupResult.duplicates && dupResult.duplicates.length > 0) {
+          // update existing claimant - find the matching one by key
+          const matchingClaimant = existing.find((e: any) => {
+            return e.full_name?.toLowerCase() === candidate.name?.toLowerCase()
+          })
+          if (matchingClaimant) {
+            const updated = await store.updateClaimant(matchingClaimant.id, payload)
+            if (updated) {
+              results.updated += 1
+              // reflect update in our in-memory list
+              const idx = existing.findIndex((e: any) => e.id === matchingClaimant.id)
+              if (idx !== -1) existing[idx] = updated as any
+            } else {
+              // If update failed, fallback to upsert which will create if necessary
+              const up = await (store as any).upsertClaimant(payload)
+              results[up.action === 'created' ? 'created' : 'updated'] += 1
+              if (up.claimant) existing.push(up.claimant as any)
+            }
           }
         } else {
           // create or upsert new claimant (idempotent)
@@ -57,7 +62,7 @@ export async function POST(req: Request) {
 
     // record summary back on temp snapshot
     data.ingest = { ts: Date.now(), results }
-    await tmpStore.writeImportData(data)
+    await tmpStore.writeImportData(id, data)
 
     return NextResponse.json({ ok: true, results })
   } catch (err: any) {

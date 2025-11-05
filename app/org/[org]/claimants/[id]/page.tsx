@@ -15,7 +15,7 @@ export default async function Page({ params }: Props) {
   return (
     <div>
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">{claimant.name}</h1>
+        <h1 className="text-2xl font-semibold">{claimant.full_name}</h1>
         <Link href={`/org/${params.org}/claimants`}>
           <span className="text-sm text-primary underline">Back</span>
         </Link>
@@ -29,7 +29,7 @@ export default async function Page({ params }: Props) {
           <CardContent>
             <div className="text-sm">Email: {claimant.email ?? "—"}</div>
             <div className="text-sm">Phone: {claimant.phone ?? "—"}</div>
-            <div className="text-sm">Created: {new Date(claimant.createdAt).toLocaleString()}</div>
+            <div className="text-sm">Created: {claimant.created_at ? new Date(claimant.created_at).toLocaleString() : 'N/A'}</div>
           </CardContent>
         </Card>
       </div>
