@@ -388,4 +388,60 @@ export type {
   TraceMessage,
   TraceToolRun,
 };
+
+// ============================================================================
+// Schema-to-Table Mapping (Supabase Integration)
+// ============================================================================
+
+// [AUTO-GEN-START] Schema bindings
+import type { Database } from "@/types/database.types";
+
+export const SchemaMap: Record<keyof Database["public"]["Tables"], any> = {
+  claimants: ClaimantSchema,
+  reminders: ReminderSchema,
+  pending_client_invites: PendingClientInviteSchema,
+  activities: ActivitySchema,
+  email_templates: EmailTemplateSchema,
+  payments: PaymentSchema,
+  timesheets: TimesheetSchema,
+  messages: MessageSchema,
+  xero_sync: XeroSyncSchema,
+  sms_messages: SMSMessageSchema,
+  sms_templates: SMSTemplateSchema,
+  client_messages: ClientMessageSchema,
+  app_settings: AppSettingsSchema,
+  tasks: TaskSchema,
+  company_essentials: CompanyEssentialSchema,
+  trace_history: TraceHistorySchema,
+  claim_notes: ClaimNoteSchema,
+  trace_conversations: TraceConversationSchema,
+  trace_messages: TraceMessageSchema,
+  trace_tool_runs: TraceToolRunSchema,
+};
+
+// Helper function to validate data against table schema
+export function validateForTable<T extends keyof Database["public"]["Tables"]>(
+  tableName: T,
+  data: any
+) {
+  const schema = SchemaMap[tableName];
+  if (!schema) {
+    throw new Error(`No schema found for table: ${tableName}`);
+  }
+  return schema.parse(data);
+}
+
+// Helper function for safe parsing (returns success/error)
+export function safeValidateForTable<T extends keyof Database["public"]["Tables"]>(
+  tableName: T,
+  data: any
+) {
+  const schema = SchemaMap[tableName];
+  if (!schema) {
+    return { success: false, error: `No schema found for table: ${tableName}` };
+  }
+  const result = schema.safeParse(data);
+  return result;
+}
+// [AUTO-GEN-END]
 // [AUTO-GEN-END]

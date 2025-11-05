@@ -1,39 +1,50 @@
-// Supabase clients for browser (public) and server (service role).
-// The server/client will only be created when SUPABASE_SERVICE_ROLE_KEY (or SUPABASE_SERVICE_KEY)
-// and SUPABASE_URL are present in the environment. Otherwise the export will be `null` so
-// callers can fall back to file-backed or mocked implementations in dev.
-import { createClient } from '@supabase/supabase-js'
-import fs from 'fs'
-import path from 'path'
+// Supabase clients using MCP (Model Context Protocol)
+// Unified access to Supabase through centralized MCP configuration
+import { createMCPClient } from './mcp-client'
+import type { SupabaseClient } from '@supabase/supabase-js'
 
-// Resolution order:
-// 1. Environment variables (NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY or SUPABASE_* variants)
-// 2. Optional local MCP-provided file at .mcp/supabase.json (opt-in; do NOT commit credentials).
-// This lets CI or local tooling write a small creds file when running in ephemeral environments.
+// [AUTO-GEN-START] Type binding imports
+import type { Database } from '@/types/database.types'
+export type { Database }
+// [AUTO-GEN-END]
 
-function readLocalMcp() {
-	try {
-		const p = path.join(process.cwd(), '.mcp', 'supabase.json')
-		if (!fs.existsSync(p)) return null
-		const raw = fs.readFileSync(p, 'utf-8')
-		return JSON.parse(raw)
-	} catch (e) {
-		// ignore parse errors — prefer env vars
-		return null
+// Lazy init to avoid resolving credentials during Next.js build/import time
+let _supabase: SupabaseClient | null = null
+function getClient(): SupabaseClient {
+	if (!_supabase) {
+		const mcp = createMCPClient()
+		_supabase = mcp.service('supabase')
 	}
+	return _supabase
 }
 
-const mcp = readLocalMcp()
+// Export lazy proxies that act like clients but initialize on first property access
+function lazyClient(): SupabaseClient {
+	return new Proxy({} as any, {
+		get(_target, prop) {
+			const client = getClient() as any
+			return client[prop]
+		},
+		set(_t, prop, value) {
+			const client = getClient() as any
+			client[prop] = value
+			return true
+		},
+		apply(_t, thisArg, argArray) {
+			const client = getClient() as any
+			return client.apply(thisArg, argArray)
+		},
+	}) as unknown as SupabaseClient
+}
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || (mcp && mcp.url) || ''
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || (mcp && mcp.anonKey) || ''
+export const supabase: SupabaseClient = lazyClient()
+export const supabaseServer: SupabaseClient = supabase
 
-export const supabase = supabaseUrl && supabaseAnonKey ? createClient(supabaseUrl, supabaseAnonKey) : null
-
-const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY || (mcp && mcp.serviceRoleKey) || ''
-
-export const supabaseServer = supabaseUrl && supabaseServiceRoleKey
-	? createClient(supabaseUrl, supabaseServiceRoleKey, { auth: { persistSession: false } })
-	: null
+// [AUTO-GEN-START] Typed client exports
+// Import typed client for type-safe queries
+// Usage: import { supabaseTyped } from '@/lib/supabaseClient'
+export { supabaseTyped, getSupabaseTypedClient } from './withTypedSupabase'
+export type { Table, TableInsert, TableUpdate } from './withTypedSupabase'
+// [AUTO-GEN-END]
 
 export default supabase
