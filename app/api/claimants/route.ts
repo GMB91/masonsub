@@ -18,7 +18,15 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const body = (await request.json()) as Record<string, unknown>
+    let body: Record<string, unknown>
+    try {
+      body = (await request.json()) as Record<string, unknown>
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error('Error in POST /api/claimants:', err)
+      const msg = err instanceof Error ? err.message : 'Invalid JSON'
+      return fail(`Invalid JSON body: ${msg}`, 400)
+    }
     if (!body.name) {
       return fail('Missing required field: name', 400)
     }
@@ -36,12 +44,8 @@ export async function POST(request: Request) {
     const created = await claimantStore.createClaimant(body as any)
     return ok({ claimant: created }, 201)
   } catch (err) {
-    // Distinguish invalid JSON from other server errors
     // eslint-disable-next-line no-console
     console.error('Error in POST /api/claimants:', err)
-    if (err instanceof SyntaxError) {
-      return fail(`Invalid JSON body: ${err.message}`, 400)
-    }
     const message = err instanceof Error ? err.message : 'Unexpected error'
     return fail(`Failed to create claimant: ${message}`, 500)
   }
