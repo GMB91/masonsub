@@ -17,7 +17,8 @@
     "check:health": "node scripts/check-health.js",
     "check:claimants": "node ./scripts/smoke-claimants.js",
     "test": "vitest",
-    "verify-types": "tsx scripts/verify-type-integrity.ts"
+    "verify-types": "tsx scripts/verify-type-integrity.ts",
+    "update:types": "tsx scripts/update-database-types.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

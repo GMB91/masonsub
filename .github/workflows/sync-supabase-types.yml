@@ -1,0 +1,140 @@
+name: Sync Supabase Types
+
+on:
+  schedule:
+    # Run daily at midnight UTC
+    - cron: "0 0 * * *"
+  workflow_dispatch:  # Allow manual trigger
+    inputs:
+      auto_commit:
+        description: 'Auto-commit changes if verification passes'
+        required: false
+        default: 'true'
+        type: boolean
+
+jobs:
+  sync-types:
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: write
+      issues: write
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+      
+      - name: Install dependencies
+        run: |
+          cd MasonApp
+          npm ci
+      
+      - name: Update Supabase types
+        id: update
+        env:
+          SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
+          AUTO_COMMIT: ${{ inputs.auto_commit || 'true' }}
+        run: |
+          cd MasonApp
+          npm run update:types
+        continue-on-error: true
+      
+      - name: Check for changes
+        id: check_changes
+        run: |
+          cd MasonApp
+          if git diff --quiet src/types/database.types.ts; then
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+          else
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Configure git
+        if: steps.check_changes.outputs.has_changes == 'true' && steps.update.outcome == 'success'
+        run: |
+          git config user.name "masonvector-bot"
+          git config user.email "bot@masonvector.ai"
+      
+      - name: Commit and push changes
+        if: steps.check_changes.outputs.has_changes == 'true' && steps.update.outcome == 'success'
+        run: |
+          cd MasonApp
+          git add src/types/database.types.ts
+          git commit -m "chore: Auto-update Supabase types ($(date +%Y-%m-%d))
+          
+          Generated from schema changes detected in production database.
+          Verification passed - all types and schemas synchronized.
+          
+          Triggered by: ${{ github.event_name }}
+          Run ID: ${{ github.run_id }}"
+          git push origin main
+      
+      - name: Create issue on failure
+        if: steps.update.outcome == 'failure'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const date = new Date().toISOString().split('T')[0];
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `⚠️ Supabase Type Sync Failed (${date})`,
+              body: `## Type Sync Failure Report
+              
+              The automated Supabase type synchronization detected issues that require manual review.
+              
+              ### Details
+              - **Trigger**: ${context.eventName}
+              - **Run ID**: ${context.runId}
+              - **Date**: ${date}
+              - **Branch**: ${context.ref}
+              
+              ### Possible Causes
+              1. Schema changes require new TypeScript interfaces in \`src/types/entities.ts\`
+              2. Missing Zod schemas in \`src/types/zodSchemas.ts\`
+              3. SchemaMap needs updating
+              4. Network/authentication issues with Supabase
+              
+              ### Manual Steps
+              1. Review workflow logs: [Run #${context.runId}](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})
+              2. Run locally: \`npm run update:types\`
+              3. Follow error messages to add missing types/schemas
+              4. Run verification: \`npm run verify-types\`
+              5. Commit and push when passing
+              
+              ### Reference
+              - [Type Maintenance Guide](./scripts/TYPE_MAINTENANCE.md)
+              - [Type System Docs](./logs/TYPE_SYSTEM_COMPLETE.md)
+              `,
+              labels: ['automated', 'type-safety', 'needs-review', 'bug']
+            });
+      
+      - name: Summary
+        run: |
+          echo "## 🔄 Supabase Type Sync Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ steps.update.outcome }}" == "success" ]; then
+            echo "✅ **Status**: Success" >> $GITHUB_STEP_SUMMARY
+            if [ "${{ steps.check_changes.outputs.has_changes }}" == "true" ]; then
+              echo "📝 **Changes**: Detected and committed" >> $GITHUB_STEP_SUMMARY
+              echo "🔍 **Verification**: Passed" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "📝 **Changes**: None detected" >> $GITHUB_STEP_SUMMARY
+              echo "✨ **Result**: Types already synchronized" >> $GITHUB_STEP_SUMMARY
+            fi
+          else
+            echo "❌ **Status**: Failed" >> $GITHUB_STEP_SUMMARY
+            echo "🐛 **Action**: Issue created for manual review" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Triggered by**: ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Date**: $(date)" >> $GITHUB_STEP_SUMMARY
