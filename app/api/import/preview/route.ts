@@ -29,16 +29,16 @@ export async function POST(req: Request) {
     // suggest a detailed mapping when caller didn't provide one
     const suggestedMappingDetailed: HeaderInferenceResult = mapping
       ? Object.fromEntries(Object.keys(rows[0] || {}).map((k) => [k, { top: mapping[k] ? { target: mapping[k] as any, confidence: 1 } : undefined, alternatives: [] }])) as any
-      : inferHeaderMapping(Object.keys(rows[0] || {}), preview)
+      : inferHeaderMapping(Object.keys(rows[0] || {}))
 
     for (let i = 0; i < preview.length; i++) {
       const r = preview[i]
       // apply mapping using top candidate when confidence is reasonable
       const mappedRow: Record<string, string> = {}
-      const meta = suggestedMappingDetailed
+      const meta = suggestedMappingDetailed as any
       if (meta) {
         for (const k of Object.keys(r)) {
-          const info = meta[k]
+          const info = meta[k] as any
           if (!info) {
             mappedRow[k] = r[k]
             continue
@@ -56,11 +56,11 @@ export async function POST(req: Request) {
       }
 
       // pass the mapped row into duplicate detection
-      const matches = await findPotentialDuplicates(mappedRow, org, 0.85)
-      if (matches && matches.length > 0) {
+      const matches = await findPotentialDuplicates([mappedRow as any], [])
+      if (matches && matches.duplicates && matches.duplicates.length > 0) {
         duplicates.push({
           row: i + 1,
-          matches: matches.map((m) => ({
+          matches: matches.duplicates.map((m: any) => ({
             id: m.id,
             external_id: (m as any).external_id ?? ((m as any).metadata && (m as any).metadata.externalId) ?? null,
             name: ((m as any).name ?? `${(m as any).firstName ?? ''} ${(m as any).lastName ?? ''}`.trim()) || '',

@@ -23,6 +23,6 @@ export async function GET(_request: Request, context: unknown) {
   } catch (err) {
     logError('Error in GET /api/orgs/[org]', { err: err instanceof Error ? err.message : String(err) })
     const message = err instanceof Error ? err.message : 'Unexpected error'
-    return fail('Failed to load organization', 500, message)
+    return fail(`Failed to load organization: ${message}`, 500)
   }
 }

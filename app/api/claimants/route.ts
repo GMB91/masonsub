@@ -12,7 +12,7 @@ export async function GET(request: Request) {
     // eslint-disable-next-line no-console
     console.error('Error in GET /api/claimants:', err)
     const message = err instanceof Error ? err.message : 'Unexpected error'
-    return fail('Failed to load claimants', 500, message)
+    return fail(`Failed to load claimants: ${message}`, 500)
   }
 }
 
@@ -33,16 +33,16 @@ export async function POST(request: Request) {
     if (body.phone && typeof body.phone === 'string') {
       body.phone = normalizePhone(body.phone)
     }
-    const created = await claimantStore.createClaimant(body)
+    const created = await claimantStore.createClaimant(body as any)
     return ok({ claimant: created }, 201)
   } catch (err) {
     // Distinguish invalid JSON from other server errors
     // eslint-disable-next-line no-console
     console.error('Error in POST /api/claimants:', err)
     if (err instanceof SyntaxError) {
-      return fail('Invalid JSON body', 400, err.message)
+      return fail(`Invalid JSON body: ${err.message}`, 400)
     }
     const message = err instanceof Error ? err.message : 'Unexpected error'
-    return fail('Failed to create claimant', 500, message)
+    return fail(`Failed to create claimant: ${message}`, 500)
   }
 }

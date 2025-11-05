@@ -9,6 +9,6 @@ export async function GET() {
   } catch (err) {
     logError('Error in GET /api/health', { err: err instanceof Error ? err.message : String(err) })
     const message = err instanceof Error ? err.message : 'Unexpected error'
-    return fail('Health check failed', 500, message)
+    return fail(`Health check failed: ${message}`, 500)
   }
 }

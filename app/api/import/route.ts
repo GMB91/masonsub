@@ -128,13 +128,14 @@ export async function POST(req: Request) {
 
       try {
         // detect duplicate against preloaded existing
-        const dup = duplicateDetector.findDuplicate({ name: payload.name as string, email: payload.email as string | undefined, claimId: (payload as any).claimId as string | undefined }, existing)
-        if (dup && skipDuplicates) {
-          duplicates.push({ row: i + 1, reason: dup.reason, claimantId: dup.claimant.id, score: (dup as any).score })
+        const dupResult = duplicateDetector.findDuplicates([{ full_name: payload.name as string, state: payload.state as string, dob: payload.dob as string } as any], existing)
+        if (dupResult && dupResult.duplicates.length > 0 && skipDuplicates) {
+          const dup = dupResult.duplicates[0];
+          duplicates.push({ row: i + 1, reason: 'duplicate', claimantId: dup.id as string, score: 1 })
           continue
         }
 
-        const created = await store.createClaimant(payload)
+        const created = await store.createClaimant(payload as any)
         // add to existing so subsequent rows detect duplicates against created rows
         existing.push(created)
         imported.push(created)

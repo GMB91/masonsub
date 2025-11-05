@@ -16,7 +16,7 @@ export async function GET(_request: Request, context: unknown) {
     // eslint-disable-next-line no-console
     console.error('Error in GET /api/claimants/[id]:', err)
     const message = err instanceof Error ? err.message : 'Unexpected error'
-    return fail('Failed to load claimant', 500, message)
+    return fail(`Failed to load claimant: ${message}`, 500)
   }
 }
 
@@ -44,13 +44,14 @@ export async function PUT(request: Request, context: unknown) {
     } catch (err) {
       // eslint-disable-next-line no-console
       console.error('Error parsing JSON in PUT /api/claimants/[id]:', err)
-      return fail('Invalid JSON', 400, err instanceof Error ? err.message : undefined)
+      const msg = err instanceof Error ? err.message : 'Invalid JSON';
+      return fail(msg, 400)
     }
   } catch (err) {
     // eslint-disable-next-line no-console
     console.error('Error in PUT /api/claimants/[id]:', err)
     const message = err instanceof Error ? err.message : 'Unexpected error'
-    return fail('Failed to update claimant', 500, message)
+    return fail(`Failed to update claimant: ${message}`, 500)
   }
 }
 
@@ -67,6 +68,6 @@ export async function DELETE(_request: Request, context: unknown) {
     // eslint-disable-next-line no-console
     console.error('Error in DELETE /api/claimants/[id]:', err)
     const message = err instanceof Error ? err.message : 'Unexpected error'
-    return fail('Failed to delete claimant', 500, message)
+    return fail(`Failed to delete claimant: ${message}`, 500)
   }
 }
