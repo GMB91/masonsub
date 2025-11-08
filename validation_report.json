@@ -9,7 +9,8 @@
                           "STRUCTURE - layout.tsx in /app/",
                           "FILE - layout-client.tsx",
                           "SUPABASE - .env.local file",
-                          "SUPABASE - Supabase client initialization",
+                          "SUPABASE - SUPABASE_URL configured",
+                          "SUPABASE - SUPABASE_ANON_KEY configured",
                           "FILE - Supabase client file",
                           "AUTH - Auth routes directory",
                           "FILE - Dashboard route",
@@ -37,7 +38,7 @@
                         "Favicon: Missing favicon"
                     ],
     "build_warnings":  [
-                           "Dependencies not installed (missing node_modules)"
+
                        ],
     "missing_files":  [
 
@@ -48,10 +49,9 @@
                              "Missing dynamic tenant route pattern"
                          ],
     "auth_issues":  [
-                        "Missing middleware.ts for session management"
+
                     ],
     "supabase_errors":  [
-                            "SUPABASE_URL configured: Missing NEXT_PUBLIC_SUPABASE_URL",
-                            "SUPABASE_ANON_KEY configured: Missing NEXT_PUBLIC_SUPABASE_ANON_KEY"
+                            "Supabase client initialization: Missing createClient call"
                         ]
 }
