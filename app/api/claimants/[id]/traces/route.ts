@@ -13,7 +13,7 @@ export async function GET(_request: Request, context: unknown) {
     if (!claimant) return fail('Not found', 404)
 
     const claimantId = claimant.id || (id as string)
-    const traces = await traceStore.getTracesByClaimantId(claimantId)
+    const traces = await traceStore.getTracesForClaimant(claimantId)
     return ok({ traces })
   } catch (err) {
     // eslint-disable-next-line no-console

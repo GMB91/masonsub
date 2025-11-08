@@ -1,6 +1,6 @@
 "use client"
 import React from "react"
-import { LayoutDashboard, FileText, DollarSign, PieChart, Users, Calendar, Settings } from 'lucide-react'
+import { LayoutDashboard, FileText, DollarSign, PieChart, Users, Calendar, Clock, Settings } from 'lucide-react'
 
 const NAV = [
   { key: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -8,6 +8,7 @@ const NAV = [
   { key: 'recovered', label: 'Recovered Funds', icon: DollarSign },
   { key: 'analytics', label: 'Analytics', icon: PieChart },
   { key: 'clients', label: 'Clients', icon: Users },
+  { key: 'timesheets', label: 'Timesheets', icon: Clock },
   { key: 'calendar', label: 'Calendar', icon: Calendar },
 ]
 

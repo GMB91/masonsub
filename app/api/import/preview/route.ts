@@ -56,11 +56,11 @@ export async function POST(req: Request) {
       }
 
       // pass the mapped row into duplicate detection
-      const matches = await findPotentialDuplicates([mappedRow as any], [])
-      if (matches && matches.duplicates && matches.duplicates.length > 0) {
+      const matches = await findPotentialDuplicates(mappedRow as Record<string, string>)
+      if (matches && matches.length > 0) {
         duplicates.push({
           row: i + 1,
-          matches: matches.duplicates.map((m: any) => ({
+          matches: matches.map((m: any) => ({
             id: m.id,
             external_id: (m as any).external_id ?? ((m as any).metadata && (m as any).metadata.externalId) ?? null,
             name: ((m as any).name ?? `${(m as any).firstName ?? ''} ${(m as any).lastName ?? ''}`.trim()) || '',

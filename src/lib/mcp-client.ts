@@ -16,6 +16,13 @@ export class MCPClient {
   private config: MCPConfig;
 
   constructor() {
+    // In development mode, disable MCP client to reduce Supabase instances
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('MCP_SERVER_URL not found, using direct Supabase connection');
+      this.config = {};
+      return;
+    }
+    
     this.config = {
       mcpUrl: process.env.MCP_SERVER_URL || process.env.NEXT_PUBLIC_MCP_SERVER_URL,
       // Support both MCP_* and standard SUPABASE_* envs
@@ -46,6 +53,13 @@ export class MCPClient {
   }
 
   private connectSupabase(): SupabaseClient {
+    // In development, return a mock client to avoid multiple instances
+    if (process.env.NODE_ENV === 'development') {
+      return createClient('https://placeholder.supabase.co', 'placeholder-key', {
+        auth: { persistSession: false, autoRefreshToken: false }
+      });
+    }
+    
     if (!this.config.supabaseUrl || !this.config.anonKey) {
       // Defer hard failure: return a client-like error thrower that only errors on use
       const error = new Error('Supabase credentials not found in environment');

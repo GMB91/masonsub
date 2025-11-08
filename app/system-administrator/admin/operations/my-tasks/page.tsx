@@ -3,7 +3,7 @@
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Clock, CheckCircle2, AlertCircle as AlertCircleIcon, Plus } from "lucide-react";
-import { TESTING_MODE, mockData } from "@/lib/testing";
+import { TESTING_MODE, mockData } from "../../../../../src/lib/testing";
 
 export default function MyTasksPage() {
   return (
@@ -81,7 +81,7 @@ export default function MyTasksPage() {
                   </div>
                   <div>
                     <h3 className="font-semibold text-slate-900">{task.title}</h3>
-                    <p className="text-sm text-slate-500 mt-1">Due: {task.due}</p>
+                    <p className="text-sm text-slate-500 mt-1">Due: {task.due_date}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">

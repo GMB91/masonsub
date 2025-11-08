@@ -7,14 +7,13 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+// Simple table components replacement
+const Table = ({ children, className }: any) => <table className={`min-w-full divide-y divide-gray-200 ${className}`}>{children}</table>
+const TableHeader = ({ children }: any) => <thead className="bg-gray-50">{children}</thead>
+const TableBody = ({ children }: any) => <tbody className="bg-white divide-y divide-gray-200">{children}</tbody>
+const TableRow = ({ children }: any) => <tr>{children}</tr>
+const TableHead = ({ children }: any) => <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{children}</th>
+const TableCell = ({ children }: any) => <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{children}</td>
 
 interface Claimant {
   id: string;

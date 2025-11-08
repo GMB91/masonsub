@@ -3,8 +3,39 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { getSupabaseClient } from "@/lib/supabaseClient";
+import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+
+// Dev login button component
+interface DevLoginButtonProps {
+  role: 'admin' | 'manager' | 'contractor' | 'client';
+  label: string;
+}
+
+function DevLoginButton({ role, label }: DevLoginButtonProps) {
+  const { devSignIn } = useAuth();
+  const router = useRouter();
+
+  const handleDevLogin = async () => {
+    try {
+      await devSignIn(role);
+      router.push('/');
+    } catch (error) {
+      console.error('Dev login error:', error);
+    }
+  };
+
+  return (
+    <Button 
+      onClick={handleDevLogin}
+      variant="outline" 
+      className="w-full"
+    >
+      {label}
+    </Button>
+  );
+}
 
 export default function LoginPage() {
   const router = useRouter();
@@ -98,6 +129,15 @@ export default function LoginPage() {
               <p>Development Mode: Use any credentials</p>
             </div>
           </form>
+
+          {/* Quick Dev Login */}
+          <div className="mt-6 pt-6 border-t border-slate-200">
+            <p className="text-center text-sm font-medium text-slate-700 mb-3">Quick Dev Login:</p>
+            <div className="grid grid-cols-2 gap-2">
+              <DevLoginButton role="admin" label="Admin" />
+              <DevLoginButton role="contractor" label="Contractor" />
+            </div>
+          </div>
         </CardContent>
       </Card>
     </div>

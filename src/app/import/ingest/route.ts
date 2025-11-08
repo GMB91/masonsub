@@ -30,11 +30,9 @@ export async function POST(req: Request) {
         const dupResult = findDuplicate([candidate] as any, existing as any)
         const payload: Record<string, any> = { ...row, org }
 
-        if (dupResult.duplicates && dupResult.duplicates.length > 0) {
-          // update existing claimant - find the matching one by key
-          const matchingClaimant = existing.find((e: any) => {
-            return e.full_name?.toLowerCase() === candidate.name?.toLowerCase()
-          })
+        if (dupResult) {
+          // update existing claimant - use the found duplicate
+          const matchingClaimant = dupResult.claimant
           if (matchingClaimant) {
             const updated = await store.updateClaimant(matchingClaimant.id, payload)
             if (updated) {
@@ -62,7 +60,7 @@ export async function POST(req: Request) {
 
     // record summary back on temp snapshot
     data.ingest = { ts: Date.now(), results }
-    await tmpStore.writeImportData(id, data)
+    await tmpStore.writeImportData(data)
 
     return NextResponse.json({ ok: true, results })
   } catch (err: any) {

@@ -25,9 +25,14 @@ export default function ClaimantForm({ initial, onSaved }: { initial?: Partial<C
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-3 bg-white border border-slate-200 rounded-xl p-4">
       <div>
-        <label className="block text-sm">Full Name</label>
-        <input {...register('full_name')} className="mt-1 w-full border rounded px-2 py-1" />
-        {errors.full_name && <div className="text-red-600 text-sm">{errors.full_name.message as any}</div>}
+        <label className="block text-sm">First Name</label>
+        <input {...register('firstName')} className="mt-1 w-full border rounded px-2 py-1" />
+        {errors.firstName && <div className="text-red-600 text-sm">{errors.firstName.message as any}</div>}
+      </div>
+      <div>
+        <label className="block text-sm">Last Name</label>
+        <input {...register('lastName')} className="mt-1 w-full border rounded px-2 py-1" />
+        {errors.lastName && <div className="text-red-600 text-sm">{errors.lastName.message as any}</div>}
       </div>
       <div>
         <label className="block text-sm">Email</label>

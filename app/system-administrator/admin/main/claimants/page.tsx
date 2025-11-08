@@ -12,8 +12,8 @@ export default function ClaimantsPage() {
   const [statusFilter, setStatusFilter] = useState("all");
 
   const filteredClaimants = mockData.claimants.filter((claimant) => {
-    const matchesSearch = claimant.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      claimant.email.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = claimant.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      claimant.address.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === "all" || claimant.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
@@ -81,9 +81,9 @@ export default function ClaimantsPage() {
               <tbody>
                 {filteredClaimants.map((claimant) => (
                   <tr key={claimant.id} className="border-b hover:bg-slate-50">
-                    <td className="py-3 px-4 text-sm font-medium text-slate-900">{claimant.name}</td>
-                    <td className="py-3 px-4 text-sm text-slate-600">{claimant.email}</td>
-                    <td className="py-3 px-4 text-sm text-slate-600">{claimant.phone}</td>
+                    <td className="py-3 px-4 text-sm font-medium text-slate-900">{claimant.full_name}</td>
+                    <td className="py-3 px-4 text-sm text-slate-600">{claimant.address}</td>
+                    <td className="py-3 px-4 text-sm text-slate-600">${claimant.amount}</td>
                     <td className="py-3 px-4">
                       <span
                         className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${

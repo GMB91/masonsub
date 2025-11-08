@@ -17,7 +17,6 @@ async function probe(url, timeout = 3000) {
 
 async function main() {
   const urls = [
-    'http://localhost:3000/api/health',
     'http://localhost:3001/api/health'
   ]
   for (const url of urls) {

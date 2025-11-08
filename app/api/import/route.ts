@@ -128,9 +128,13 @@ export async function POST(req: Request) {
 
       try {
         // detect duplicate against preloaded existing
-        const dupResult = duplicateDetector.findDuplicates([{ full_name: payload.name as string, state: payload.state as string, dob: payload.dob as string } as any], existing)
-        if (dupResult && dupResult.duplicates.length > 0 && skipDuplicates) {
-          const dup = dupResult.duplicates[0];
+        const potentialDuplicates = await duplicateDetector.findPotentialDuplicates({
+          full_name: payload.name as string, 
+          state: payload.state as string, 
+          dob: payload.dob as string 
+        } as Record<string, string>)
+        if (potentialDuplicates && potentialDuplicates.length > 0 && skipDuplicates) {
+          const dup = potentialDuplicates[0];
           duplicates.push({ row: i + 1, reason: 'duplicate', claimantId: dup.id as string, score: 1 })
           continue
         }

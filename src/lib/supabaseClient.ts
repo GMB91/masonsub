@@ -40,6 +40,10 @@ function lazyClient(): SupabaseClient {
 export const supabase: SupabaseClient = lazyClient()
 export const supabaseServer: SupabaseClient = supabase
 
+// Legacy exports for compatibility
+export const getSupabaseClient = () => supabase
+export const getSupabaseServiceClient = () => supabaseServer
+
 // [AUTO-GEN-START] Typed client exports
 // Import typed client for type-safe queries
 // Usage: import { supabaseTyped } from '@/lib/supabaseClient'

@@ -6,13 +6,14 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, Users, Database, BarChart2, Globe, Shield, Code2, Cpu,
   FileText, Activity, Settings, Lock, Key, Bug, Server, Network, Terminal,
-  ChevronDown, ChevronRight
+  ChevronDown, ChevronRight, Bot, TestTube, ShieldCheck, Clock, Calendar, CheckCircle,
+  DollarSign, TrendingUp
 } from "lucide-react";
 
 export default function SystemSidebar() {
   const pathname = usePathname();
   const [expandedSections, setExpandedSections] = useState<string[]>([
-    "🎯 Core", // Default expanded
+    // All sections collapsed by default
   ]);
 
   const toggleSection = (title: string) => {
@@ -25,39 +26,61 @@ export default function SystemSidebar() {
 
   const systemNav = [
     {
-      title: "🎯 Core",
+      title: "� MAIN",
+      items: [
+        { name: "Dashboard", icon: LayoutDashboard, href: "/system-administrator/admin/main/dashboard" },
+        { name: "Claimants", icon: Users, href: "/system-administrator/admin/main/claimants" },
+        { name: "Upload Data", icon: Database, href: "/system-administrator/admin/main/upload-data" },
+        { name: "Calendar", icon: Calendar, href: "/system-administrator/admin/main/calendar" },
+      ],
+    },
+    {
+      title: "⚙️ OPERATIONS",
+      items: [
+        { name: "Workflows", icon: Activity, href: "/system-administrator/operations/workflows" },
+        { name: "Templates", icon: FileText, href: "/system-administrator/operations/templates" },
+        { name: "Reports", icon: BarChart2, href: "/system-administrator/operations/reports" },
+      ],
+    },
+    {
+      title: "💬 COMMUNICATION",
+      items: [
+        { name: "Templates", icon: FileText, href: "/system-administrator/communication/templates" },
+        { name: "Messages", icon: Activity, href: "/system-administrator/communication/messages" },
+        { name: "Campaigns", icon: Globe, href: "/system-administrator/communication/campaigns" },
+      ],
+    },
+    {
+      title: "💰 FINANCIAL",
+      items: [
+        { name: "Claims", icon: DollarSign, href: "/system-administrator/financial/claims" },
+        { name: "Payments", icon: CheckCircle, href: "/system-administrator/financial/payments" },
+        { name: "Analytics", icon: TrendingUp, href: "/system-administrator/financial/analytics" },
+      ],
+    },
+    {
+      title: "🔧 ADMINISTRATION",
+      items: [
+        { name: "Users", icon: Users, href: "/system-administrator/administration/users" },
+        { name: "Permissions", icon: Lock, href: "/system-administrator/administration/permissions" },
+        { name: "Settings", icon: Settings, href: "/system-administrator/administration/settings" },
+      ],
+    },
+    {
+      title: "🛠️ SYSTEM TOOLS",
+      items: [
+        { name: "Database", icon: Database, href: "/system-administrator/system-tools/database" },
+        { name: "API Monitor", icon: Network, href: "/system-administrator/system-tools/api-monitor" },
+        { name: "Logs", icon: Terminal, href: "/system-administrator/system-tools/logs" },
+      ],
+    },
+    {
+      title: "�🎯 CORE",
       items: [
         { name: "Overview", icon: LayoutDashboard, href: "/system-administrator/core/overview" },
         { name: "Users", icon: Users, href: "/system-administrator/core/users" },
         { name: "Data", icon: Database, href: "/system-administrator/core/data" },
         { name: "Analytics", icon: BarChart2, href: "/system-administrator/core/analytics" },
-      ],
-    },
-    {
-      title: "🔧 Infrastructure",
-      items: [
-        { name: "Domains", icon: Globe, href: "/system-administrator/core/domains" },
-        { name: "Server Health", icon: Server, href: "/system-administrator/core/health" },
-        { name: "API", icon: Network, href: "/system-administrator/core/api" },
-        { name: "Agents", icon: Cpu, href: "/system-administrator/core/agents" },
-      ],
-    },
-    {
-      title: "🔐 Security",
-      items: [
-        { name: "Security", icon: Shield, href: "/system-administrator/core/security" },
-        { name: "Authentication", icon: Lock, href: "/system-administrator/core/settings/authentication" },
-        { name: "Secrets", icon: Key, href: "/system-administrator/core/secrets" },
-      ],
-    },
-    {
-      title: "⚙️ System",
-      items: [
-        { name: "Settings", icon: Settings, href: "/system-administrator/core/settings/app-settings" },
-        { name: "Code", icon: Code2, href: "/system-administrator/core/code" },
-        { name: "Logs", icon: FileText, href: "/system-administrator/core/logs" },
-        { name: "Debug & Audit", icon: Bug, href: "/system-administrator/core/debug" },
-        { name: "Terminal", icon: Terminal, href: "/system-administrator/core/terminal" },
       ],
     },
   ];
@@ -113,6 +136,21 @@ export default function SystemSidebar() {
           );
         })}
       </nav>
+      
+      {/* Bottom System Admin Link */}
+      <div className="border-t border-slate-200 p-3">
+        <Link
+          href="/system-admin"
+          className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+            pathname.startsWith('/system-admin')
+              ? 'bg-indigo-50 text-indigo-600'
+              : 'text-slate-600 hover:bg-indigo-50 hover:text-indigo-600'
+          }`}
+        >
+          <ShieldCheck size={18} />
+          <span>System Admin</span>
+        </Link>
+      </div>
     </aside>
   );
 }

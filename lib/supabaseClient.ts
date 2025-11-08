@@ -10,11 +10,21 @@ export function getSupabaseClient(): SupabaseClient {
   if (!url || !key) {
     // During build time, return a placeholder client
     console.warn('Supabase credentials not available - using placeholder');
-    return createClient('https://placeholder.supabase.co', 'placeholder-key');
+    return createClient('https://placeholder.supabase.co', 'placeholder-key', {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false
+      }
+    });
   }
 
   if (!cachedClient) {
-    cachedClient = createClient(url, key);
+    cachedClient = createClient(url, key, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true
+      }
+    });
   }
 
   return cachedClient;

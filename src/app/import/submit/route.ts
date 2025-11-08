@@ -23,8 +23,12 @@ export async function POST(req: Request) {
       // ignore cleanup failures
     }
 
-    const session = await tmpStore.createImportSession(file.name, rows)
-    const id = session.id
+    const id = await tmpStore.writeImportData({
+      filename: file.name,
+      preview: rows.slice(0, 10),
+      org,
+      rowCount: rows.length
+    })
     return NextResponse.redirect(new URL(`/upload/result/${id}`, req.url))
   } catch (err: any) {
     console.error('[import/submit] error', err)

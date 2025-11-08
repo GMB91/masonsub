@@ -83,13 +83,13 @@ async function handlePreview(records: ClaimantRecord[]): Promise<NextResponse<Up
   if (error) throw error;
 
   // Find duplicates
-  const { duplicates, fresh } = findDuplicates(records, existingClaimants || []);
+  const { duplicates, unique } = findDuplicates(records);
 
   return NextResponse.json({
     success: true,
     total: records.length,
     duplicates: duplicates.length,
-    fresh: fresh.length,
+    fresh: unique.length,
   });
 }
 
@@ -109,7 +109,7 @@ async function handleImport(
   if (fetchError) throw fetchError;
 
   // Find duplicates
-  const { duplicates, fresh } = findDuplicates(records, existingClaimants || []);
+  const { duplicates, unique } = findDuplicates(records);
 
   // Create staging batch
   const { data: staging, error: stagingError } = await supabase
@@ -118,7 +118,7 @@ async function handleImport(
       filename,
       total_records: records.length,
       duplicate_count: duplicates.length,
-      fresh_count: fresh.length,
+      fresh_count: unique.length,
       status: "pending",
     })
     .select("id")
@@ -148,7 +148,7 @@ async function handleImport(
     success: true,
     total: records.length,
     duplicates: duplicates.length,
-    fresh: fresh.length,
+    fresh: unique.length,
     stagingId: staging.id,
   });
 }
@@ -220,13 +220,13 @@ function parseCSV(text: string): ClaimantRecord[] {
 
   for (let i = 1; i < lines.length; i++) {
     const values = lines[i].split(",").map((v) => v.trim().replace(/"/g, ""));
-    const record: ClaimantRecord = {};
+    const record: any = {};
 
     headers.forEach((header, index) => {
       record[header] = values[index] || "";
     });
 
-    records.push(record);
+    records.push(record as ClaimantRecord);
   }
 
   return records;

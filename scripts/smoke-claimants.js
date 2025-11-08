@@ -6,7 +6,7 @@ const fetch = globalThis.fetch ?? (() => {
   }
 })()
 
-const BASE = process.env.BASE_URL || "http://localhost:3000"
+const BASE = process.env.BASE_URL || "http://localhost:3001"
 
 async function run() {
   console.log("Smoke test: Claimants API against", BASE)
